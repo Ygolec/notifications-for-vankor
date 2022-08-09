@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Настройки</title>
+</head>
+<body>
+<p>
+    <button onClick='location.href="index.html"'><-Назад</button>
+    <label for="Subject">Тема сообщения:</label>
+    <input type="text" id="Subject">
+    <label for="Body">Соддержание сообщения:</label>
+    <textarea rows="10" id="Body" cols="45" name="text"></textarea>
+    <label for="timeToSend">За сколько дней отправлять напоминаня?</label>
+    <input type="text" id="timeToSend">
+    <label for="pathToExel">Путь до файла Exel:</label>
+    <input type="file" id="fileChoose">
+    <input type="text" id="pathToExel">
+    <label for="fromEmail">Почта отправки:</label>
+    <input type="text" id="fromEmail">
+</p>
+<input type="radio" name="periodicity" class="radioButton" id="noDay">
+<label for="noDay">Не задано</label>
+<input type="radio" name="periodicity" class="radioButton" id="threeDay">
+<label for="threeDay">Каждые 3 дня</label>
+<input type="radio" name="periodicity" id="everyWeek">
+<label for="everyWeek" class="radioButton">Каждую неделю</label>
+<input type="radio" name="periodicity" id="other">
+<label for="other" onclick="enableText()" class="radioButton">Другое</label>
+<input type="text" id="otherText" disabled=true>
+
+
+    <input type="checkbox" id="autoStart"  class="checkBox" onclick="autoStartup(this)">
+    <label for="autoStart">Автозапуск при запуске Windows</label>
+<p>
+    <button onclick="saveSettings()">Сохранить</button>
+</p>
+</body>
+
+<link rel="stylesheet" href="style.css">
+
+<script src="scripts.js"></script>
+<script type="text/javascript">
+    window.onload = readSettings();
+    const fileSelector = document.getElementById('fileChoose');
+    fileSelector.addEventListener('change', (event) => {
+        let path = document.getElementById("fileChoose").files[0].path
+        document.getElementById('pathToExel').value = path
+    });
+</script>
+</html>
