@@ -22,5 +22,5 @@ mailItem.Sensitivity = 2
 mailItem._oleobj_.Invoke(*(64209, 0, 8, 0, olNS.Accounts.Item(FromEmail)))
 
 mailItem.Display()
-# mailItem.Save()
-# mailItem.Send()
+#mailItem.Save()
+#mailItem.Send()

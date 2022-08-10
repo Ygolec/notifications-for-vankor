@@ -1,5 +1,3 @@
-const schedule = require("node-schedule");
-
 function exel() {
     const fs = require('fs');
     const readXlsxFile = require('read-excel-file/node')
@@ -48,7 +46,7 @@ function sendEmail() {
             let temp = Math.floor((data - today) / 86400000)
 
             if (temp < 0) {
-                alert(matrixRow[0] + " Нужно обновить информацию или срочно пройти обучение!")
+                alert(matrixRow[0] + " Нужно обновить информацию о пользователе(Excel) или срочно пройти обучение!")
             }
 
             if ((temp < settings['dayToSend']) && temp > 0) {
@@ -158,27 +156,121 @@ function createStartup(path) {
     let options = {
         args: [path]
     };
-    PythonShell.run('createShortcut.py', options, function (err, results) {});
+    PythonShell.run('createShortcut.py', options, function (err, results) {
+    });
 }
 
 function removeStartup() {
     let {PythonShell} = require('python-shell');
     let options = {};
-    PythonShell.run('removeShortcut.py', options, function (err, results) {});
+    PythonShell.run('removeShortcut.py', options, function (err, results) {
+    });
 }
 
-function checkExcel(){
+function checkExcel() {
+    let {PythonShell} = require('python-shell');
+    const fs = require('fs');
     exel()
-    sendEmail()
+    const dataSet = fs.readFileSync('settings.json', 'utf8');
+    const dataExel = fs.readFileSync('exel.json', 'utf8');
+
+    let settings = JSON.parse(dataSet)
+    let excel = JSON.parse(dataExel)
+    let today = new Date()
+    let massiveNameToSend = excel.flatMap((matrixRow, index) => {
+        if (index >= 2) {
+            let ok = false
+            let data = new Date(matrixRow[2])
+            let temp = Math.floor((data - today) / 86400000)
+
+            if (temp < 0) {
+                alert(matrixRow[0] + " Нужно обновить информацию о пользователе(Excel) или срочно пройти обучение!")
+            }
+
+            if ((temp < settings['dayToSend']) && temp > 0) {
+                ok = true
+            }
+
+            if (ok) {
+                return [matrixRow[0]]
+            }
+        }
+
+        return []
+    })
+
+    return massiveNameToSend;
+}
+
+function send(massiveNameToSend) {
+    let {PythonShell} = require('python-shell');
+    const fs = require('fs');
+    const schedule = require('node-schedule')
+
+    const dataSet = fs.readFileSync('settings.json', 'utf8');
+
+    let settings = JSON.parse(dataSet)
+    let subject = settings['subject'];
+    let body = settings['body'];
+    let frEmail = settings['fromEmail'];
+
+    let to = massiveNameToSend.join(';');
+
+    to += ";"
+    let options = {
+        args: [subject, body, to, frEmail]
+    };
+
+    PythonShell.run('main.py', options, function (err, results) {
+    });
+    showNotification()
 }
 
 function autoCheck() {
+
+    // const fs = require('fs');
+    // const schedule = require('node-schedule')
+    //
+    // const dataSet = fs.readFileSync('Check.json', 'utf8');
+    // let settings = JSON.parse(dataSet)
+    // let job = null
+    // if (settings['autoCheck']) {
+    //     let rule = new schedule.RecurrenceRule();
+    //     rule.second = new schedule.Range(0, 59, 10);
+    //
+    //     job = schedule.scheduleJob(rule, function () {
+    //         let massiveNameToSend = checkExcel()
+    //         if (massiveNameToSend !== "") {
+    //             send(massiveNameToSend);
+    //         }
+    //     });
+    // }
+
+}
+
+function startCheck() {
+    const fs = require('fs');
+
+    let setting = {
+        autoCheck: true
+    };
+    let data = JSON.stringify(setting, null, 2)
+    fs.writeFileSync('Check.json', data)
+    autoCheck()
+}
+
+function stopCheck() {
     const schedule = require('node-schedule')
-    let rule = new schedule.RecurrenceRule();
+    const fs = require('fs');
 
-    rule.second = new schedule.Range(0, 59, 5);
 
-    schedule.scheduleJob(rule, function () {
-        alert("Work")
-    });
+    let setting = {
+        autoCheck: false
+    };
+    let data = JSON.stringify(setting, null, 2)
+    fs.writeFileSync('Check.json', data)
+}
+
+function hello() {
+    alert("HI")
 }

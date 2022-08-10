@@ -19,6 +19,7 @@
     "electron": "^20.0.0"
   },
   "dependencies": {
+    "bree": "^9.1.2",
     "electron-squirrel-startup": "^1.0.0",
     "node-schedule": "^2.1.0",
     "node-startup-manager": "^0.1.3",

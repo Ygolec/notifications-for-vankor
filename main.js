@@ -1,7 +1,7 @@
 const {app, BrowserWindow, nativeImage, Tray, Menu} = require('electron')
 const path = require('path')
 const url = require('url')
-
+const fs = require('fs');
 
 let mainWindow;
 
@@ -29,7 +29,21 @@ function createWindow() {
         tray.destroy();
     });
 
-    const fs = require('fs');
+    const Bree = require('bree');
+    const bree = new Bree(
+        {
+            jobs:[
+                {
+                    name:'checkToSend',
+                    interval:'5s'
+                }
+            ]
+        }
+    );
+    (async () => {
+        await bree.start();
+    })();
+
     let setting = {
         path: path.resolve('.', 'notifications-for-vankor.exe')
     };
