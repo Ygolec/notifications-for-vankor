@@ -1,4 +1,4 @@
-
+const schedule = require("node-schedule");
 
 function exel() {
     const fs = require('fs');
@@ -24,7 +24,7 @@ function readSettings() {
         document.getElementById('timeToSend').value = settings['dayToSend']
         document.getElementById('pathToExel').value = settings['pathToExel']
         document.getElementById('fromEmail').value = settings['fromEmail']
-        document.getElementById('autoStart').checked= settings['autoStart']
+        document.getElementById('autoStart').checked = settings['autoStart']
     });
 }
 
@@ -144,17 +144,41 @@ function autoStartup(checkThis) {
     let data = JSON.parse(dataSet)
 
     let path = data['path'];
-    let AutoLaunch = require('auto-launch');
-    let autoLauncher = new AutoLaunch({
-        name: "notifications-for-vankor",
-        path: path
-    });
-// Checking if autoLaunch is enabled, if not then enabling it.
+
     if (checkThis.checked) {
-        autoLauncher.enable();
+        createStartup(path)
     } else {
-        autoLauncher.disable();
+        removeStartup()
     }
 
 }
 
+function createStartup(path) {
+    let {PythonShell} = require('python-shell');
+    let options = {
+        args: [path]
+    };
+    PythonShell.run('createShortcut.py', options, function (err, results) {});
+}
+
+function removeStartup() {
+    let {PythonShell} = require('python-shell');
+    let options = {};
+    PythonShell.run('removeShortcut.py', options, function (err, results) {});
+}
+
+function checkExcel(){
+    exel()
+    sendEmail()
+}
+
+function autoCheck() {
+    const schedule = require('node-schedule')
+    let rule = new schedule.RecurrenceRule();
+
+    rule.second = new schedule.Range(0, 59, 5);
+
+    schedule.scheduleJob(rule, function () {
+        alert("Work")
+    });
+}
