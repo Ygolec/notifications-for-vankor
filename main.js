@@ -3,6 +3,7 @@ const path = require('path')
 const url = require('url')
 const fs = require('fs');
 
+
 let mainWindow;
 
 function createWindow() {
@@ -28,21 +29,6 @@ function createWindow() {
         win.setSkipTaskbar(false);
         tray.destroy();
     });
-
-    const Bree = require('bree');
-    const bree = new Bree(
-        {
-            jobs:[
-                {
-                    name:'checkToSend',
-                    interval:'5s'
-                }
-            ]
-        }
-    );
-    (async () => {
-        await bree.start();
-    })();
 
     let setting = {
         path: path.resolve('.', 'notifications-for-vankor.exe')

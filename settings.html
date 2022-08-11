@@ -6,34 +6,40 @@
 </head>
 <body>
 <p>
-    <button onClick='location.href="index.html"'><-Назад</button>
+    <button onClick='location.href="index.html"' class="button"><-Назад</button>
+
     <label for="Subject">Тема сообщения:</label>
     <input type="text" id="Subject">
     <label for="Body">Соддержание сообщения:</label>
-    <textarea rows="10" id="Body" cols="45" name="text"></textarea>
+    <textarea rows="10" id="Body" cols="45" name="text" ></textarea>
     <label for="timeToSend">За сколько дней отправлять напоминаня?</label>
-    <input type="text" id="timeToSend">
+    <input type="text" id="timeToSend" >
     <label for="pathToExel">Путь до файла Exel:</label>
-    <input type="file" id="fileChoose">
-    <input type="text" id="pathToExel">
+    <input type="file" id="fileChoose" class="custom-file-input">
+    <input type="text" id="pathToExel" >
     <label for="fromEmail">Почта отправки:</label>
-    <input type="text" id="fromEmail">
+    <input type="text" id="fromEmail" >
+
 </p>
-<input type="radio" name="periodicity" class="radioButton" id="noDay">
-<label for="noDay">Не задано</label>
-<input type="radio" name="periodicity" class="radioButton" id="threeDay">
-<label for="threeDay">Каждые 3 дня</label>
-<input type="radio" name="periodicity" id="everyWeek">
-<label for="everyWeek" class="radioButton">Каждую неделю</label>
-<input type="radio" name="periodicity" id="other">
-<label for="other" onclick="enableText()" class="radioButton">Другое</label>
-<input type="text" id="otherText" disabled=true>
+<label for="everyDay">Периодичность отправки:</label>
+<div class="form_radio_btn">
+    <input type="radio" name="periodicity" class="radioButton" id="everyDay" onclick="test(id)">
+    <label for="everyDay">Каждый день</label>
+    <input type="radio" name="periodicity" class="radioButton" id="threeDay" onclick="test(id)">
+    <label for="threeDay">Каждые 3 дня</label>
+    <input type="radio" name="periodicity" id="everyWeek" onclick="test(id)">
+    <label for="everyWeek" class="radioButton">Каждую неделю</label>
+    <input type="radio" name="periodicity" id="other" onclick="test(id)">
+    <label for="other" onclick="enableText()" class="radioButton">Другое</label>
+    <input type="text" id="otherText" disabled=true>
+    <div class="auto-start">
+        <input type="checkbox" id="autoStart" class="checkBox" onclick="autoStartup(this)">
+        <label for="autoStart">Автозапуск при запуске Windows</label>
+    </div>
+</div>
 
-
-<input type="checkbox" id="autoStart" class="checkBox" onclick="autoStartup(this)">
-<label for="autoStart">Автозапуск при запуске Windows</label>
 <p>
-    <button onclick="saveSettings()">Сохранить</button>
+    <button onclick="saveSettings()" class="button">Сохранить</button>
 </p>
 </body>
 

@@ -17,12 +17,21 @@ function readSettings() {
     fs.readFile('settings.json', 'utf8', (err, data) => {
         if (err) throw err;
         let settings = JSON.parse(data)
+        const days = fs.readFileSync('daysToSend.json', 'utf8');
+        let daysSelect = JSON.parse(days)
         document.getElementById('Subject').value = settings['subject']
         document.getElementById('Body').value = settings['body']
         document.getElementById('timeToSend').value = settings['dayToSend']
         document.getElementById('pathToExel').value = settings['pathToExel']
         document.getElementById('fromEmail').value = settings['fromEmail']
         document.getElementById('autoStart').checked = settings['autoStart']
+        if (daysSelect['idDay']==='other'){
+            document.getElementById(daysSelect['idDay']).checked=true
+            document.getElementById(daysSelect['idDay']+'Text').disabled = false;
+            document.getElementById(daysSelect['idDay']+'Text').value=daysSelect['dayToSend']
+        }else {
+            document.getElementById(daysSelect['idDay']).checked=true
+        }
     });
 }
 
@@ -76,11 +85,21 @@ function sendEmail() {
 function saveSettings() {
     const fs = require('fs');
 
+
     let a = document.getElementById("Subject").value
     let b = document.getElementById('Body').value
     let c = document.getElementById('timeToSend').value
     let d = document.getElementById('pathToExel').value
     let e = document.getElementById('fromEmail').value
+    let f = document.getElementById('otherText').value
+
+    let dataDays= fs.readFileSync('daysToSend.json','utf8')
+    let Days=JSON.parse(dataDays)
+    if (Days['dayToSend']===""){
+        Days['dayToSend']=f
+        let dataToWhite = JSON.stringify(Days, null, 2)
+        fs.writeFileSync('daysToSend.json',dataToWhite)
+    }
 
     checkEmailFrom()
     if (a || b || c || d || e) {
@@ -205,7 +224,7 @@ function checkExcel() {
 function send(massiveNameToSend) {
     let {PythonShell} = require('python-shell');
     const fs = require('fs');
-    const schedule = require('node-schedule')
+
 
     const dataSet = fs.readFileSync('settings.json', 'utf8');
 
@@ -228,23 +247,21 @@ function send(massiveNameToSend) {
 
 function autoCheck() {
 
-    // const fs = require('fs');
-    // const schedule = require('node-schedule')
-    //
-    // const dataSet = fs.readFileSync('Check.json', 'utf8');
-    // let settings = JSON.parse(dataSet)
-    // let job = null
-    // if (settings['autoCheck']) {
-    //     let rule = new schedule.RecurrenceRule();
-    //     rule.second = new schedule.Range(0, 59, 10);
-    //
-    //     job = schedule.scheduleJob(rule, function () {
-    //         let massiveNameToSend = checkExcel()
-    //         if (massiveNameToSend !== "") {
-    //             send(massiveNameToSend);
-    //         }
-    //     });
-    // }
+    const fs = require('fs');
+    const schedule = require('node-schedule')
+
+    const dataSet = fs.readFileSync('Check.json', 'utf8');
+    let settings = JSON.parse(dataSet)
+    let job = null
+    if (settings['autoCheck']) {
+        let rule = new schedule.RecurrenceRule();
+        rule.second = new schedule.Range(0, 59, 10);
+
+        job = schedule.scheduleJob(rule, function () {
+            let massiveNameToSend = checkExcel()
+            checkDate(massiveNameToSend)
+        });
+    }
 
 }
 
@@ -256,6 +273,14 @@ function startCheck() {
     };
     let data = JSON.stringify(setting, null, 2)
     fs.writeFileSync('Check.json', data)
+
+    let lastDate = new Date()
+    setting = {
+        lastDate: lastDate
+    };
+    data = JSON.stringify(setting, null, 2)
+    fs.writeFileSync('lastDate.json', data)
+
     autoCheck()
 }
 
@@ -263,14 +288,74 @@ function stopCheck() {
     const schedule = require('node-schedule')
     const fs = require('fs');
 
-
     let setting = {
         autoCheck: false
     };
     let data = JSON.stringify(setting, null, 2)
     fs.writeFileSync('Check.json', data)
+    schedule.gracefulShutdown();
+
 }
 
-function hello() {
-    alert("HI")
+function checkDate(massiveNameToSend) {
+    const fs = require('fs');
+
+    const dataSet = fs.readFileSync('lastDate.json', 'utf8');
+    const dataDays=fs.readFileSync('daysToSend.json','utf8');
+
+    let settings = JSON.parse(dataSet)
+    let Days=JSON.parse(dataDays)
+    let DayToSend=Days['dayToSend']
+    let date_1 = new Date();
+    let date_2 = new Date(settings['lastDate']);
+    let difference = date_1.getTime() - date_2.getTime();
+    let TotalDays = Math.floor(difference / (1000 * 3600 * 24));
+    alert(TotalDays)
+
+    if (TotalDays<0){
+        let lastDate = new Date()
+        let settingDay = {
+            lastDate: lastDate
+        };
+        let dataDay = JSON.stringify(settingDay, null, 2)
+        fs.writeFileSync('lastDate.json', dataDay)
+    }
+
+    if (TotalDays>=DayToSend){
+        if (massiveNameToSend !== "") {
+            send(massiveNameToSend);
+            let lastDate = new Date()
+            let settingDay = {
+                lastDate: lastDate
+            };
+            let dataDay = JSON.stringify(settingDay, null, 2)
+            fs.writeFileSync('lastDate.json', dataDay)
+        }
+
+    }
+}
+
+function test(id) {
+    const fs = require('fs');
+
+    let days=null
+    if (id === 'everyDay') {
+        days=1
+    }
+    if (id === 'threeDay') {
+        days=3
+    }
+    if (id === 'everyWeek') {
+        days=7
+    }
+    if (id === 'other') {
+        days=document.getElementById('otherText').value
+    }
+    let setting = {
+        dayToSend: days,
+        idDay:id
+    };
+    let data = JSON.stringify(setting, null, 2)
+    fs.writeFileSync('daysToSend.json', data)
+
 }

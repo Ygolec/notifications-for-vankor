@@ -6,15 +6,19 @@
 </head>
 <body>
 <p>
-    <button onclick="sendEmail()">Отправить сообщения</button>
-    <button onclick="exel()">Обработка exсel файла</button>
-    <button onClick='location.href="settings.html"'>Настройки</button>
-    <button onclick="startCheck()">Запустить!</button>
-    <button onclick="stopCheck()">Остановить!</button>
+    <button class="button" onclick="sendEmail()">Отправить сообщения</button>
+    <button class="button" onclick="exel()">Обработка exсel файла</button>
+    <button class="button" onClick='location.href="settings.html"'>Настройки</button>
+<div class="bottom-button">
+    <button class="button" onclick="startCheck()">Запустить!</button>
+    <button class="button" onclick="stopCheck()">Остановить!</button>
+</div>
 </p>
+<status-indicator positive pulse></status-indicator>
 </body>
 <script src="scripts.js"></script>
 <link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="lamp.css">
 <script type="text/javascript">
     window.onload = autoCheck();
 </script>

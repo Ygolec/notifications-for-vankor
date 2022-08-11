@@ -3,6 +3,6 @@
   "body": "Привет",
   "dayToSend": "360",
   "pathToExel": "C:\\Users\\tchis\\Рабочий стол\\Проверка знаний инструктажи ОТ, ПРОМБЕЗ, ПТМ.xlsx",
-  "fromEmail": "daniilchistobaev@outlook.com",
-  "autoStart": true
+  "fromEmail": "thekevinhit@gmail.com",
+  "autoStart": false
 }
