@@ -117,7 +117,8 @@ function saveSettings() {
         fs.writeFileSync('settings.json', data)
 
     } else {
-        alert("Заполните все поля!");
+
+        // alert("Заполните все поля!");
         return false;
     }
 
@@ -125,6 +126,10 @@ function saveSettings() {
 }
 
 function checkEmailFrom() {
+
+
+    const {remote} = require('electron');
+    let {dialog} = remote;
     let {PythonShell} = require('python-shell');
 
     let frEmail = document.getElementById('fromEmail').value;
@@ -134,9 +139,11 @@ function checkEmailFrom() {
     };
 
     PythonShell.run('foremail.py', options, function (err, results) {
-        if (results == "True") {
+        if (results==="True") {
         } else {
-            alert("Email Не верный проверьте поле")
+            dialog.showErrorBox("Ошибка", "Email Не верный проверьте поле")
+
+            // alert("Email Не верный проверьте поле")
             document.getElementById("fromEmail").value = ""
         }
     });
@@ -246,7 +253,7 @@ function send(massiveNameToSend) {
 }
 
 function autoCheck() {
-
+    lamp()
     const fs = require('fs');
     const schedule = require('node-schedule')
 
@@ -294,7 +301,7 @@ function stopCheck() {
     let data = JSON.stringify(setting, null, 2)
     fs.writeFileSync('Check.json', data)
     schedule.gracefulShutdown();
-
+    lamp();
 }
 
 function checkDate(massiveNameToSend) {
@@ -357,5 +364,18 @@ function test(id) {
     };
     let data = JSON.stringify(setting, null, 2)
     fs.writeFileSync('daysToSend.json', data)
+}
+function lamp() {
+    const fs = require('fs');
 
+    const dataSet = fs.readFileSync('Check.json', 'utf8');
+    let settings = JSON.parse(dataSet)
+
+    if (settings['autoCheck']){
+        document.getElementById("negative_lamp").style.display = "none";
+        document.getElementById("positive_lamp").style.display = "block"
+    }else {
+        document.getElementById("positive_lamp").style.display = "none";
+        document.getElementById("negative_lamp").style.display = "block";
+    }
 }
