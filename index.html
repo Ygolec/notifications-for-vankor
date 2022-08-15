@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <title>Уведомления</title>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline';"/>
 </head>
@@ -10,10 +11,13 @@
     <button class="button" onclick="exel()">Обработка exсel файла</button>
     <button class="button" onClick='location.href="settings.html"'>Настройки</button>
 <div class="bottom-button">
-    <button class="button" onclick="startCheck()">Запустить!</button>
-    <button class="button" onclick="stopCheck()">Остановить!</button>
+    <button class="button" onclick="startCheck()" id="buttonStart">Запустить!</button>
+    <button class="button" onclick="stopCheck()" id="buttonStop">Остановить!</button>
 </div>
 </p>
+<div class="textForLamp">
+    <label>Статус работы:</label>
+</div>
 <status-indicator positive pulse id="positive_lamp"></status-indicator>
 <status-indicator negative pulse id="negative_lamp"></status-indicator>
 </body>

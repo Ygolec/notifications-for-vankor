@@ -70,6 +70,10 @@ status-indicator[pulse] {
     animation-direction: normal;
     animation-delay: 0;
     animation-fill-mode: none;
+    position: fixed;
+    bottom: 9px;
+    right: 10px;
+    align-items: center
 }
 
 status-indicator[active] {
@@ -78,6 +82,7 @@ status-indicator[active] {
 
 status-indicator[active][pulse] {
     animation-name: status-indicator-pulse-active;
+
 }
 
 status-indicator[positive] {

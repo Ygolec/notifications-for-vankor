@@ -6,7 +6,7 @@
 </head>
 <body>
 <p>
-    <button onClick='location.href="index.html"' class="button"><-Назад</button>
+    <button onclick="checkBack()" class="button"><-Назад</button>
 
     <label for="Subject">Тема сообщения:</label>
     <input type="text" id="Subject">
@@ -14,7 +14,7 @@
     <textarea rows="10" id="Body" cols="45" name="text" ></textarea>
     <label for="timeToSend">За сколько дней отправлять напоминаня?</label>
     <input type="text" id="timeToSend" >
-    <label for="pathToExel">Путь до файла Exel:</label>
+    <label for="pathToExel">Путь до файла Excel:</label>
     <input type="file" id="fileChoose" class="custom-file-input">
     <input type="text" id="pathToExel" >
     <label for="fromEmail">Почта отправки:</label>
@@ -47,6 +47,11 @@
 
 <script src="scripts.js"></script>
 <script type="text/javascript">
+ async function checkBack(){
+        if (await saveSettings()){
+            location.href="index.html"
+        }
+    }
     window.onload = readSettings();
     const fileSelector = document.getElementById('fileChoose');
     fileSelector.addEventListener('change', (event) => {

@@ -2,14 +2,24 @@ function exel() {
     const fs = require('fs');
     const readXlsxFile = require('read-excel-file/node')
     const dataSet = fs.readFileSync('settings.json', 'utf8');
-
+    const Swal = require('sweetalert2');
     let settings = JSON.parse(dataSet)
+    if (fs.existsSync(settings['pathToExel'])) {
+        readXlsxFile(settings['pathToExel']).then((rows, errors) => {
+            let data = JSON.stringify(rows, null, 2)
+            fs.writeFileSync('exel.json', data)
+        })
+        return true;
+    } else {
+        Swal.fire({
+            icon: 'warning',
+            title: "Файл Excel не найден",
+            text: "Пройдите в настройки и укажите новый путь к Excel с данными пользователей",
+        })
+        stopCheck()
+        return false;
+    }
 
-    readXlsxFile(settings['pathToExel']).then((rows) => {
-
-        let data = JSON.stringify(rows, null, 2)
-        fs.writeFileSync('exel.json', data)
-    })
 }
 
 function readSettings() {
@@ -25,19 +35,21 @@ function readSettings() {
         document.getElementById('pathToExel').value = settings['pathToExel']
         document.getElementById('fromEmail').value = settings['fromEmail']
         document.getElementById('autoStart').checked = settings['autoStart']
-        if (daysSelect['idDay']==='other'){
-            document.getElementById(daysSelect['idDay']).checked=true
-            document.getElementById(daysSelect['idDay']+'Text').disabled = false;
-            document.getElementById(daysSelect['idDay']+'Text').value=daysSelect['dayToSend']
-        }else {
-            document.getElementById(daysSelect['idDay']).checked=true
+        if (daysSelect['idDay'] === 'other') {
+            document.getElementById(daysSelect['idDay']).checked = true
+            document.getElementById(daysSelect['idDay'] + 'Text').disabled = false;
+            document.getElementById(daysSelect['idDay'] + 'Text').value = daysSelect['dayToSend']
+        } else {
+            document.getElementById(daysSelect['idDay']).checked = true
         }
     });
 }
 
 function sendEmail() {
+    const Swal = require('sweetalert2');
     let {PythonShell} = require('python-shell');
     const fs = require('fs');
+
     const dataSet = fs.readFileSync('settings.json', 'utf8');
     const dataExel = fs.readFileSync('exel.json', 'utf8');
 
@@ -47,15 +59,23 @@ function sendEmail() {
     let frEmail = settings['fromEmail'];
     let exel = JSON.parse(dataExel)
     let today = new Date()
+    let namesOfError = new Array()
 
     let massiveNameToSend = exel.flatMap((matrixRow, index) => {
         if (index >= 2) {
             let ok = false
-            let data = new Date(matrixRow[2])
+            let data = new Date(matrixRow[3])
             let temp = Math.floor((data - today) / 86400000)
 
             if (temp < 0) {
-                alert(matrixRow[0] + " Нужно обновить информацию о пользователе(Excel) или срочно пройти обучение!")
+                namesOfError.push(matrixRow[0])
+            }
+            if (namesOfError !== "") {
+                Swal.fire({
+                    icon: 'warning',
+                    title: "Обновите информацию об этих пользователях в Excel:",
+                    text: namesOfError,
+                })
             }
 
             if ((temp < settings['dayToSend']) && temp > 0) {
@@ -63,14 +83,14 @@ function sendEmail() {
             }
 
             if (ok) {
-                return [matrixRow[0]]
+                return [matrixRow[1]]
             }
         }
         return []
     })
     let to = massiveNameToSend.join(';');
 
-    if (massiveNameToSend != "") {
+    if (massiveNameToSend !== "") {
         to += ";"
         let options = {
             args: [subject, body, to, frEmail]
@@ -82,71 +102,86 @@ function sendEmail() {
     }
 }
 
-function saveSettings() {
-    const fs = require('fs');
+async function saveSettings() {
+    if (await checkEmailFrom()) {
+        const fs = require('fs');
+        const Swal = require('sweetalert2')
 
+        let a = document.getElementById("Subject").value
+        let b = document.getElementById('Body').value
+        let c = document.getElementById('timeToSend').value
+        let d = document.getElementById('pathToExel').value
+        let e = document.getElementById('fromEmail').value
+        let f = document.getElementById('otherText').value
 
-    let a = document.getElementById("Subject").value
-    let b = document.getElementById('Body').value
-    let c = document.getElementById('timeToSend').value
-    let d = document.getElementById('pathToExel').value
-    let e = document.getElementById('fromEmail').value
-    let f = document.getElementById('otherText').value
+        let dataDays = fs.readFileSync('daysToSend.json', 'utf8')
+        let Days = JSON.parse(dataDays)
+        if (Days['dayToSend'] === "") {
+            Days['dayToSend'] = f
+            let dataToWhite = JSON.stringify(Days, null, 2)
+            fs.writeFileSync('daysToSend.json', dataToWhite)
+        }
 
-    let dataDays= fs.readFileSync('daysToSend.json','utf8')
-    let Days=JSON.parse(dataDays)
-    if (Days['dayToSend']===""){
-        Days['dayToSend']=f
-        let dataToWhite = JSON.stringify(Days, null, 2)
-        fs.writeFileSync('daysToSend.json',dataToWhite)
-    }
+        if (a && b && c && d && e) {
+            let setting = {
+                subject: document.getElementById('Subject').value,
+                body: document.getElementById('Body').value,
+                dayToSend: document.getElementById('timeToSend').value,
+                pathToExel: document.getElementById('pathToExel').value,
+                fromEmail: document.getElementById('fromEmail').value,
+                autoStart: document.getElementById('autoStart').checked,
+            };
 
-    checkEmailFrom()
-    if (a || b || c || d || e) {
-        let setting = {
-            subject: document.getElementById('Subject').value,
-            body: document.getElementById('Body').value,
-            dayToSend: document.getElementById('timeToSend').value,
-            pathToExel: document.getElementById('pathToExel').value,
-            fromEmail: document.getElementById('fromEmail').value,
-            autoStart: document.getElementById('autoStart').checked,
-        };
+            let data = JSON.stringify(setting, null, 2)
 
-        let data = JSON.stringify(setting, null, 2)
-
-        fs.writeFileSync('settings.json', data)
-
+            fs.writeFileSync('settings.json', data)
+            Swal.fire({
+                icon: 'success',
+                title: 'Готово!',
+            })
+            return true;
+        } else {
+            Swal.fire({
+                icon: 'warning',
+                text: 'Заполните все поля!',
+            })
+            return false;
+        }
     } else {
-
-        // alert("Заполните все поля!");
         return false;
     }
-
-
 }
 
-function checkEmailFrom() {
-
-
-    const {remote} = require('electron');
-    let {dialog} = remote;
+async function checkEmailFrom() {
     let {PythonShell} = require('python-shell');
-
+    const Swal = require('sweetalert2')
     let frEmail = document.getElementById('fromEmail').value;
 
-    let options = {
-        args: [frEmail]
+    const runPy = async (frEmail) => {
+        let options = {
+            args: [frEmail]
+        };
+        const result = await new Promise((resolve) => {
+            PythonShell.run('foremail.py', options, function (err, results) {
+                if (results == "True") {
+                    return resolve(true);
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        text: 'Email не найден, укажите правильный Email!',
+                    })
+                    return resolve(false);
+                }
+            });
+        });
+        return result;
     };
-
-    PythonShell.run('foremail.py', options, function (err, results) {
-        if (results==="True") {
-        } else {
-            dialog.showErrorBox("Ошибка", "Email Не верный проверьте поле")
-
-            // alert("Email Не верный проверьте поле")
-            document.getElementById("fromEmail").value = ""
-        }
-    });
+    let temp=await runPy(frEmail)
+    if (temp) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 function showNotification() {
@@ -195,37 +230,51 @@ function removeStartup() {
 
 function checkExcel() {
     let {PythonShell} = require('python-shell');
+    const Swal = require('sweetalert2');
     const fs = require('fs');
-    exel()
-    const dataSet = fs.readFileSync('settings.json', 'utf8');
-    const dataExel = fs.readFileSync('exel.json', 'utf8');
+    if (exel()) {
+        const dataSet = fs.readFileSync('settings.json', 'utf8');
+        const dataExel = fs.readFileSync('exel.json', 'utf8');
 
-    let settings = JSON.parse(dataSet)
-    let excel = JSON.parse(dataExel)
-    let today = new Date()
-    let massiveNameToSend = excel.flatMap((matrixRow, index) => {
-        if (index >= 2) {
-            let ok = false
-            let data = new Date(matrixRow[2])
-            let temp = Math.floor((data - today) / 86400000)
+        let settings = JSON.parse(dataSet)
+        let excel = JSON.parse(dataExel)
+        let today = new Date()
+        let namesOfError = new Array();
+        let massiveNameToSend = excel.flatMap((matrixRow, index) => {
+            if (index >= 2) {
+                let ok = false
+                let data = new Date(matrixRow[3])
+                let temp = Math.floor((data - today) / 86400000)
 
-            if (temp < 0) {
-                alert(matrixRow[0] + " Нужно обновить информацию о пользователе(Excel) или срочно пройти обучение!")
+
+                if (temp < 0) {
+                    namesOfError.push(matrixRow[0])
+                }
+                if (namesOfError !== "") {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: "Обновите информацию об этих пользователях в Excel:",
+                        text: namesOfError,
+                    })
+                }
+
+                if ((temp < settings['dayToSend']) && temp > 0) {
+                    ok = true
+                }
+
+                if (ok) {
+                    return [matrixRow[1]]
+                }
             }
 
-            if ((temp < settings['dayToSend']) && temp > 0) {
-                ok = true
-            }
+            return []
+        })
 
-            if (ok) {
-                return [matrixRow[0]]
-            }
-        }
+        return massiveNameToSend;
+    } else {
+        return false;
+    }
 
-        return []
-    })
-
-    return massiveNameToSend;
 }
 
 function send(massiveNameToSend) {
@@ -261,13 +310,23 @@ function autoCheck() {
     let settings = JSON.parse(dataSet)
     let job = null
     if (settings['autoCheck']) {
+        document.getElementById('buttonStart').disabled = true;
+        document.getElementById('buttonStop').disabled = false;
         let rule = new schedule.RecurrenceRule();
         rule.second = new schedule.Range(0, 59, 10);
 
         job = schedule.scheduleJob(rule, function () {
             let massiveNameToSend = checkExcel()
-            checkDate(massiveNameToSend)
+            if (massiveNameToSend === false) {
+                return false;
+            } else {
+                checkDate(massiveNameToSend)
+            }
+
         });
+    } else {
+        document.getElementById('buttonStart').disabled = false;
+        document.getElementById('buttonStop').disabled = true;
     }
 
 }
@@ -302,24 +361,24 @@ function stopCheck() {
     fs.writeFileSync('Check.json', data)
     schedule.gracefulShutdown();
     lamp();
+    document.getElementById('buttonStart').disabled = false;
+    document.getElementById('buttonStop').disabled = true;
 }
 
 function checkDate(massiveNameToSend) {
     const fs = require('fs');
 
     const dataSet = fs.readFileSync('lastDate.json', 'utf8');
-    const dataDays=fs.readFileSync('daysToSend.json','utf8');
+    const dataDays = fs.readFileSync('daysToSend.json', 'utf8');
 
     let settings = JSON.parse(dataSet)
-    let Days=JSON.parse(dataDays)
-    let DayToSend=Days['dayToSend']
+    let Days = JSON.parse(dataDays)
+    let DayToSend = Days['dayToSend']
     let date_1 = new Date();
     let date_2 = new Date(settings['lastDate']);
     let difference = date_1.getTime() - date_2.getTime();
     let TotalDays = Math.floor(difference / (1000 * 3600 * 24));
-    alert(TotalDays)
-
-    if (TotalDays<0){
+    if (TotalDays < 0) {
         let lastDate = new Date()
         let settingDay = {
             lastDate: lastDate
@@ -328,7 +387,7 @@ function checkDate(massiveNameToSend) {
         fs.writeFileSync('lastDate.json', dataDay)
     }
 
-    if (TotalDays>=DayToSend){
+    if (TotalDays >= DayToSend) {
         if (massiveNameToSend !== "") {
             send(massiveNameToSend);
             let lastDate = new Date()
@@ -345,37 +404,40 @@ function checkDate(massiveNameToSend) {
 function test(id) {
     const fs = require('fs');
 
-    let days=null
+    let days = null
     if (id === 'everyDay') {
-        days=1
+        days = 1
     }
     if (id === 'threeDay') {
-        days=3
+        days = 3
     }
     if (id === 'everyWeek') {
-        days=7
+        days = 7
     }
     if (id === 'other') {
-        days=document.getElementById('otherText').value
+        days = document.getElementById('otherText').value
     }
     let setting = {
         dayToSend: days,
-        idDay:id
+        idDay: id
     };
     let data = JSON.stringify(setting, null, 2)
     fs.writeFileSync('daysToSend.json', data)
 }
+
 function lamp() {
     const fs = require('fs');
 
     const dataSet = fs.readFileSync('Check.json', 'utf8');
     let settings = JSON.parse(dataSet)
 
-    if (settings['autoCheck']){
+    if (settings['autoCheck']) {
         document.getElementById("negative_lamp").style.display = "none";
         document.getElementById("positive_lamp").style.display = "block"
-    }else {
+    } else {
         document.getElementById("positive_lamp").style.display = "none";
         document.getElementById("negative_lamp").style.display = "block";
     }
 }
+
+

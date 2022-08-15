@@ -4,6 +4,8 @@ const url = require('url')
 const fs = require('fs');
 
 
+
+
 let mainWindow;
 
 function createWindow() {
@@ -17,6 +19,7 @@ function createWindow() {
             preload: path.join(__dirname, 'preload.js')
         }
     })
+
     let tray = null;
     win.on('minimize', function (event) {
         event.preventDefault();
