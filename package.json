@@ -1,9 +1,9 @@
 {
   "name": "notifications-for-vankor",
   "version": "1.0.0",
-  "description": "Hello World!",
+  "description": "Send notifications from Outlook!",
   "main": "main.js",
-  "author": "Jane Doe",
+  "author": "Chistobaev Daniil",
   "license": "MIT",
   "scripts": {
     "start": "electron-forge start",
@@ -19,6 +19,9 @@
     "electron": "^20.0.0"
   },
   "dependencies": {
+    "@types/electron": "^1.6.10",
+    "auto-launch": "^5.0.5",
+    "electron-alert": "^0.1.20",
     "electron-squirrel-startup": "^1.0.0",
     "node-schedule": "^2.1.0",
     "node-startup-manager": "^0.1.3",

@@ -1,8 +1,9 @@
+
+
 function exel() {
     const fs = require('fs');
     const readXlsxFile = require('read-excel-file/node')
     const dataSet = fs.readFileSync('settings.json', 'utf8');
-    const Swal = require('sweetalert2');
     let settings = JSON.parse(dataSet)
     if (fs.existsSync(settings['pathToExel'])) {
         readXlsxFile(settings['pathToExel']).then((rows, errors) => {
@@ -11,11 +12,13 @@ function exel() {
         })
         return true;
     } else {
-        Swal.fire({
-            icon: 'warning',
+        const {ipcRenderer} = require('electron')
+        let swalOptions = {
             title: "Файл Excel не найден",
-            text: "Пройдите в настройки и укажите новый путь к Excel с данными пользователей",
-        })
+            text:  "Пройдите в настройки и укажите новый путь к Excel с данными пользователей",
+            icon: "warning"
+        };
+        ipcRenderer.send('asynchronous-message', swalOptions)
         stopCheck()
         return false;
     }
@@ -46,8 +49,7 @@ function readSettings() {
 }
 
 function sendEmail() {
-    const Swal = require('sweetalert2');
-    let {PythonShell} = require('python-shell');
+
     const fs = require('fs');
 
     const dataSet = fs.readFileSync('settings.json', 'utf8');
@@ -70,13 +72,6 @@ function sendEmail() {
             if (temp < 0) {
                 namesOfError.push(matrixRow[0])
             }
-            if (namesOfError !== "") {
-                Swal.fire({
-                    icon: 'warning',
-                    title: "Обновите информацию об этих пользователях в Excel:",
-                    text: namesOfError,
-                })
-            }
 
             if ((temp < settings['dayToSend']) && temp > 0) {
                 ok = true
@@ -89,15 +84,25 @@ function sendEmail() {
         return []
     })
     let to = massiveNameToSend.join(';');
+    if (namesOfError.length!==0) {
+        const {ipcRenderer} = require('electron')
 
+        let swalOptions = {
+            title: "Обновите информацию об этих пользователях в Excel:",
+            text:  namesOfError,
+            icon: "warning",
+            singletonId: "do-you-want-to-exit-alert"
+        };
+        ipcRenderer.send('asynchronous-message', swalOptions)
+    }
     if (massiveNameToSend !== "") {
         to += ";"
         let options = {
             args: [subject, body, to, frEmail]
         };
 
-        PythonShell.run('main.py', options, function (err, results) {
-        });
+        let python = require("child_process").execFile("main.exe", options.args);
+
         showNotification()
     }
 }
@@ -105,7 +110,6 @@ function sendEmail() {
 async function saveSettings() {
     if (await checkEmailFrom()) {
         const fs = require('fs');
-        const Swal = require('sweetalert2')
 
         let a = document.getElementById("Subject").value
         let b = document.getElementById('Body').value
@@ -135,16 +139,20 @@ async function saveSettings() {
             let data = JSON.stringify(setting, null, 2)
 
             fs.writeFileSync('settings.json', data)
-            Swal.fire({
-                icon: 'success',
+            const {ipcRenderer} = require('electron')
+            let swalOptions = {
                 title: 'Готово!',
-            })
+                icon: "success"
+            };
+            ipcRenderer.send('asynchronous-message', swalOptions)
             return true;
         } else {
-            Swal.fire({
-                icon: 'warning',
+            const {ipcRenderer} = require('electron')
+            let swalOptions = {
                 text: 'Заполните все поля!',
-            })
+                icon: "warning"
+            };
+            ipcRenderer.send('asynchronous-message', swalOptions)
             return false;
         }
     } else {
@@ -152,24 +160,46 @@ async function saveSettings() {
     }
 }
 
+function autoStartup(checkThis) {
+    if (checkThis.checked) {
+        createStartup()
+    } else {
+        removeStartup()
+    }
+
+}
+
+function createStartup() {
+    const {ipcRenderer} = require('electron')
+    let options=true
+    ipcRenderer.send('auto-start', options)
+}
+
+function removeStartup() {
+
+    const {ipcRenderer} = require('electron')
+    let options=false
+    ipcRenderer.send('auto-start', options)
+}
+
 async function checkEmailFrom() {
-    let {PythonShell} = require('python-shell');
-    const Swal = require('sweetalert2')
     let frEmail = document.getElementById('fromEmail').value;
 
     const runPy = async (frEmail) => {
-        let options = {
-            args: [frEmail]
-        };
+        let python = require("child_process").execFile("foremail.exe", [frEmail]);
         const result = await new Promise((resolve) => {
-            PythonShell.run('foremail.py', options, function (err, results) {
-                if (results == "True") {
+            python.stdout.on("data", function (data) {
+                data=data.replace(/\r?\n|\r/g, "")
+                if (data === "True") {
                     return resolve(true);
                 } else {
-                    Swal.fire({
-                        icon: 'error',
-                        text: 'Email не найден, укажите правильный Email!',
-                    })
+                    const {ipcRenderer} = require('electron')
+                    let swalOptions = {
+                        text: "Email не найден, укажите правильный Email!",
+                        icon: "error",
+                        showCancelButton: true
+                    };
+                    ipcRenderer.send('asynchronous-message', swalOptions)
                     return resolve(false);
                 }
             });
@@ -177,6 +207,7 @@ async function checkEmailFrom() {
         return result;
     };
     let temp=await runPy(frEmail)
+
     if (temp) {
         return true;
     } else {
@@ -197,40 +228,7 @@ function enableText() {
     document.getElementById("otherText").disabled = false;
 }
 
-function autoStartup(checkThis) {
-    const fs = require('fs');
-    const dataSet = fs.readFileSync('path.json', 'utf8');
-    let data = JSON.parse(dataSet)
-
-    let path = data['path'];
-
-    if (checkThis.checked) {
-        createStartup(path)
-    } else {
-        removeStartup()
-    }
-
-}
-
-function createStartup(path) {
-    let {PythonShell} = require('python-shell');
-    let options = {
-        args: [path]
-    };
-    PythonShell.run('createShortcut.py', options, function (err, results) {
-    });
-}
-
-function removeStartup() {
-    let {PythonShell} = require('python-shell');
-    let options = {};
-    PythonShell.run('removeShortcut.py', options, function (err, results) {
-    });
-}
-
 function checkExcel() {
-    let {PythonShell} = require('python-shell');
-    const Swal = require('sweetalert2');
     const fs = require('fs');
     if (exel()) {
         const dataSet = fs.readFileSync('settings.json', 'utf8');
@@ -250,13 +248,6 @@ function checkExcel() {
                 if (temp < 0) {
                     namesOfError.push(matrixRow[0])
                 }
-                if (namesOfError !== "") {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: "Обновите информацию об этих пользователях в Excel:",
-                        text: namesOfError,
-                    })
-                }
 
                 if ((temp < settings['dayToSend']) && temp > 0) {
                     ok = true
@@ -270,6 +261,17 @@ function checkExcel() {
             return []
         })
 
+        if (namesOfError.length!==0) {
+            const {ipcRenderer} = require('electron')
+
+            let swalOptions = {
+                title: "Обновите информацию об этих пользователях в Excel:",
+                text:  namesOfError,
+                icon: "warning",
+                singletonId: "do-you-want-to-exit-alert"
+            };
+            ipcRenderer.send('asynchronous-message', swalOptions)
+        }
         return massiveNameToSend;
     } else {
         return false;
@@ -278,7 +280,6 @@ function checkExcel() {
 }
 
 function send(massiveNameToSend) {
-    let {PythonShell} = require('python-shell');
     const fs = require('fs');
 
 
@@ -296,8 +297,7 @@ function send(massiveNameToSend) {
         args: [subject, body, to, frEmail]
     };
 
-    PythonShell.run('main.py', options, function (err, results) {
-    });
+    let python = require("child_process").execFile("main.exe", options.args);
     showNotification()
 }
 
@@ -313,13 +313,12 @@ function autoCheck() {
         document.getElementById('buttonStart').disabled = true;
         document.getElementById('buttonStop').disabled = false;
         let rule = new schedule.RecurrenceRule();
-        rule.second = new schedule.Range(0, 59, 10);
+        // rule.hour = new schedule.Range(0, 23, 1);
 
-        job = schedule.scheduleJob(rule, function () {
+        job = schedule.scheduleJob('* 1 * * *', function () {
             let massiveNameToSend = checkExcel()
-            if (massiveNameToSend === false) {
-                return false;
-            } else {
+            if (massiveNameToSend !== false) {
+
                 checkDate(massiveNameToSend)
             }
 
@@ -388,7 +387,7 @@ function checkDate(massiveNameToSend) {
     }
 
     if (TotalDays >= DayToSend) {
-        if (massiveNameToSend !== "") {
+        if (massiveNameToSend.length!==0) {
             send(massiveNameToSend);
             let lastDate = new Date()
             let settingDay = {
